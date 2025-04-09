@@ -254,8 +254,11 @@ export const generatePuzzle = (): { grid: (number | null)[][], lockedCells: bool
   return { grid, lockedCells };
 };
 
-// Find a valid value for a cell based on Sudoku constraints
-const findValidValue = (grid: (number | null)[][], row: number, col: number): number | null => {
+// Find the correct value for a cell based on the solved grid
+const findCorrectValue = (grid: (number | null)[][], row: number, col: number): number | null => {
+  // Make a copy of the grid
+  const gridCopy = JSON.parse(JSON.stringify(grid));
+  
   // Create a set of all possible values (0-8)
   const possibleValues = new Set<number>();
   for (let i = 0; i < 9; i++) {
@@ -292,8 +295,24 @@ const findValidValue = (grid: (number | null)[][], row: number, col: number): nu
     return null;
   }
 
-  // Convert the set to an array and pick a random value
+  // Instead of picking a random value, solve the grid and find the correct value
+  // for this position in the solution
   const validValues = Array.from(possibleValues);
+  
+  // Try each possible value and see if it leads to a solution
+  for (const value of validValues) {
+    gridCopy[row][col] = value;
+    
+    // If this value leads to a solution, it's the correct one
+    if (hasSolution(gridCopy)) {
+      return value;
+    }
+    
+    // Reset for the next attempt
+    gridCopy[row][col] = null;
+  }
+  
+  // If no value leads to a solution, return a random valid value as fallback
   return validValues[Math.floor(Math.random() * validValues.length)];
 };
 
@@ -302,7 +321,12 @@ export const getHint = (
   grid: (number | null)[][],
   lockedCells: boolean[][]
 ): { row: number; col: number; value: number } | null => {
-  // First, find all empty cells
+  // First, check if the current grid is valid
+  if (!isValidSudoku(grid)) {
+    return null;
+  }
+  
+  // Find all empty cells
   const emptyCells: { row: number; col: number }[] = [];
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
@@ -316,18 +340,73 @@ export const getHint = (
   if (emptyCells.length === 0) {
     return null;
   }
-
+  
+  // Make a copy of the grid for solving
+  const gridCopy = JSON.parse(JSON.stringify(grid));
+  
+  // Solve the puzzle to find the solution
+  if (!hasSolution(gridCopy)) {
+    return null; // The current grid state doesn't have a solution
+  }
+  
   // Pick a random empty cell
   const randomIndex = Math.floor(Math.random() * emptyCells.length);
   const { row, col } = emptyCells[randomIndex];
-
-  // Find a valid value for this cell
-  const value = findValidValue(grid, row, col);
   
-  // If no valid value found, return null
-  if (value === null) {
+  // Generate a temporary grid to find the correct value
+  const tempGrid = JSON.parse(JSON.stringify(grid));
+  
+  // Create a set of all possible values (0-8)
+  const possibleValues = new Set<number>();
+  for (let i = 0; i < 9; i++) {
+    possibleValues.add(i);
+  }
+
+  // Remove values already present in the same row
+  for (let c = 0; c < 9; c++) {
+    if (grid[row][c] !== null) {
+      possibleValues.delete(grid[row][c]!);
+    }
+  }
+
+  // Remove values already present in the same column
+  for (let r = 0; r < 9; r++) {
+    if (grid[r][col] !== null) {
+      possibleValues.delete(grid[r][col]!);
+    }
+  }
+
+  // Remove values already present in the same 3x3 box
+  const boxRowStart = Math.floor(row / 3) * 3;
+  const boxColStart = Math.floor(col / 3) * 3;
+  for (let r = boxRowStart; r < boxRowStart + 3; r++) {
+    for (let c = boxColStart; c < boxColStart + 3; c++) {
+      if (grid[r][c] !== null) {
+        possibleValues.delete(grid[r][c]!);
+      }
+    }
+  }
+
+  // If there are no possible values, return null
+  if (possibleValues.size === 0) {
     return null;
   }
 
-  return { row, col, value };
+  // Try each possible value and see if it leads to a solution
+  const validValues = Array.from(possibleValues);
+  for (const value of validValues) {
+    tempGrid[row][col] = value;
+    
+    // If this value leads to a solution, it's the correct one
+    if (hasSolution(tempGrid)) {
+      return { row, col, value };
+    }
+    
+    // Reset for the next attempt
+    tempGrid[row][col] = null;
+  }
+  
+  // Fallback: return a random valid value if we can't find a definitive one
+  const randomValue = validValues[Math.floor(Math.random() * validValues.length)];
+  return { row, col, value: randomValue };
 };

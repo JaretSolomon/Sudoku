@@ -100,6 +100,40 @@ const TaylorSwiftSudoku: React.FC = () => {
       newGrid[row] = [...newGrid[row]];
       newGrid[row][col] = value;
       setSudokuGrid(newGrid);
+      
+      // After adding the hint, validate the grid to update feedback
+      setTimeout(() => {
+        // First, check if the current grid state is valid
+        const valid = isValidSudoku(newGrid);
+        
+        // Check if the grid is complete
+        const complete = isComplete(newGrid);
+        setIsCompleted(complete);
+        
+        if (valid) {
+          if (complete) {
+            // Puzzle is complete and valid - success!
+            setShowSuccess(true);
+            setShowError(false);
+          } else {
+            // Check if the current state can lead to a valid solution
+            const solvable = hasSolution(newGrid);
+            if (solvable) {
+              // Current state is valid but incomplete - in progress message
+              setShowSuccess(true);
+              setShowError(false);
+            } else {
+              // Current state is valid but has no solution - error
+              setShowSuccess(false);
+              setShowError(true);
+            }
+          }
+        } else {
+          // Current state is invalid (contains duplicates) - error
+          setShowSuccess(false);
+          setShowError(true);
+        }
+      }, 100); // Small delay to ensure grid is updated first
     }
   };
 
