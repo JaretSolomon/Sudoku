@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import GameHeader from "../components/GameHeader";
 import AlbumLegend from "../components/AlbumLegend";
 import SudokuGrid from "../components/SudokuGrid";
@@ -17,6 +17,9 @@ const TaylorSwiftSudoku: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  
+  // State for notes mode
+  const [isNotesMode, setIsNotesMode] = useState(false);
 
   // Initialize the game on component mount
   useEffect(() => {
@@ -50,6 +53,11 @@ const TaylorSwiftSudoku: React.FC = () => {
       setIsCompleted(false);
     }
   };
+
+  // Function to toggle notes mode
+  const handleToggleNotesMode = useCallback(() => {
+    setIsNotesMode(prevMode => !prevMode);
+  }, []);
 
   // Function to reset the game
   const handleReset = () => {
@@ -151,17 +159,21 @@ const TaylorSwiftSudoku: React.FC = () => {
 
   return (
     <div className="bg-pattern min-h-screen py-8 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
         <GameHeader />
         
         <div className="flex flex-col items-center">
           <AlbumLegend />
           
-          <SudokuGrid 
-            grid={sudokuGrid} 
-            onCellChange={handleCellChange} 
-            lockedCells={lockedCells}
-          />
+          <div className="w-full max-w-5xl">
+            <SudokuGrid 
+              grid={sudokuGrid} 
+              onCellChange={handleCellChange} 
+              lockedCells={lockedCells}
+              isNotesMode={isNotesMode}
+              onToggleNotesMode={handleToggleNotesMode}
+            />
+          </div>
           
           <GameControls 
             onReset={handleReset} 

@@ -93,3 +93,18 @@
     transform: translate(-50%, 10px);
   }
 }
+
+/* Candidate marks styling */
+.candidates-grid {
+  font-size: 0.5rem;
+}
+
+.candidate-icon svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Keypad styling */
+.album-keypad {
+  max-width: 280px;
+}
