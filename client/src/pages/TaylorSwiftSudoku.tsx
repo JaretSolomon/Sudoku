@@ -6,7 +6,7 @@ import GameControls from "../components/GameControls";
 import FeedbackArea from "../components/FeedbackArea";
 import GameInstructions from "../components/GameInstructions";
 import Footer from "../components/Footer";
-import { generatePuzzle, isValidSudoku, isComplete, getHint } from "../lib/sudoku";
+import { generatePuzzle, isValidSudoku, isComplete, getHint, hasSolution } from "../lib/sudoku";
 
 const TaylorSwiftSudoku: React.FC = () => {
   // State to store the Sudoku grid data
@@ -16,6 +16,7 @@ const TaylorSwiftSudoku: React.FC = () => {
   // State for feedback messages
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // Initialize the game on component mount
   useEffect(() => {
@@ -29,6 +30,7 @@ const TaylorSwiftSudoku: React.FC = () => {
     setLockedCells(lockedCells);
     setShowSuccess(false);
     setShowError(false);
+    setIsCompleted(false);
   };
 
   // Function to handle cell value changes
@@ -45,6 +47,7 @@ const TaylorSwiftSudoku: React.FC = () => {
     if (showSuccess || showError) {
       setShowSuccess(false);
       setShowError(false);
+      setIsCompleted(false);
     }
   };
 
@@ -55,17 +58,33 @@ const TaylorSwiftSudoku: React.FC = () => {
 
   // Function to validate the current solution
   const handleValidate = () => {
-    // First, check if the grid is complete
-    const complete = isComplete(sudokuGrid);
-    
-    // Then check if it's valid
+    // First, check if the current grid state is valid (no duplicates in rows, columns, boxes)
     const valid = isValidSudoku(sudokuGrid);
     
-    // Show the appropriate feedback message
-    if (complete && valid) {
-      setShowSuccess(true);
-      setShowError(false);
+    // Check if the grid is complete
+    const complete = isComplete(sudokuGrid);
+    setIsCompleted(complete);
+    
+    if (valid) {
+      if (complete) {
+        // Puzzle is complete and valid - success!
+        setShowSuccess(true);
+        setShowError(false);
+      } else {
+        // Check if the current state can lead to a valid solution
+        const solvable = hasSolution(sudokuGrid);
+        if (solvable) {
+          // Current state is valid but incomplete - in progress message
+          setShowSuccess(true);
+          setShowError(false);
+        } else {
+          // Current state is valid but has no solution - error
+          setShowSuccess(false);
+          setShowError(true);
+        }
+      }
     } else {
+      // Current state is invalid (contains duplicates) - error
       setShowSuccess(false);
       setShowError(true);
     }
@@ -88,6 +107,7 @@ const TaylorSwiftSudoku: React.FC = () => {
   const clearFeedback = () => {
     setShowSuccess(false);
     setShowError(false);
+    setIsCompleted(false);
   };
 
   // Only render once we have grid data
@@ -119,6 +139,7 @@ const TaylorSwiftSudoku: React.FC = () => {
             showSuccess={showSuccess} 
             showError={showError} 
             onClose={clearFeedback}
+            isCompleted={isCompleted}
           />
           
           <GameInstructions />

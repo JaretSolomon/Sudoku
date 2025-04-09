@@ -4,17 +4,19 @@ interface FeedbackAreaProps {
   showSuccess: boolean;
   showError: boolean;
   onClose: () => void;
+  isCompleted?: boolean;
 }
 
 const FeedbackArea: React.FC<FeedbackAreaProps> = ({
   showSuccess,
   showError,
   onClose,
+  isCompleted = false,
 }) => {
   return (
     <div className="mb-6 min-h-16">
       {showSuccess && (
-        <div className="p-3 rounded-lg bg-success bg-opacity-20 text-center animate-pulse">
+        <div className={`p-3 rounded-lg bg-success bg-opacity-20 text-center ${isCompleted ? 'animate-pulse' : ''}`}>
           <p className="text-green-800 font-medium flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -28,7 +30,9 @@ const FeedbackArea: React.FC<FeedbackAreaProps> = ({
                 clipRule="evenodd"
               />
             </svg>
-            Amazing! Your solution is correct!
+            {isCompleted 
+              ? "Amazing! Your solution is correct!" 
+              : "Looking good so far! Keep going, your solution is on the right track."}
           </p>
         </div>
       )}
@@ -48,7 +52,7 @@ const FeedbackArea: React.FC<FeedbackAreaProps> = ({
                 clipRule="evenodd"
               />
             </svg>
-            There are some errors in your solution. Keep trying!
+            There are some errors in your solution. Check for duplicate albums in rows, columns, or 3x3 boxes.
           </p>
         </div>
       )}
