@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import SudokuCell from "./SudokuCell";
+import AlbumSelector from "./AlbumSelector";
 import { AlbumIcons } from "../assets/icons";
 
 interface SudokuGridProps {
@@ -10,30 +11,45 @@ interface SudokuGridProps {
 
 const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, lockedCells }) => {
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [selectorPosition, setSelectorPosition] = useState<{ x: number; y: number } | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  const handleCellClick = useCallback((row: number, col: number) => {
-    // If clicking on a locked cell, only select it but don't change its value
+  const handleCellClick = useCallback((row: number, col: number, event: React.MouseEvent) => {
+    // If clicking on a locked cell, just select it but don't show selector
     if (lockedCells[row][col]) {
       setSelectedCell({ row, col });
       return;
     }
 
-    // If clicking on the already selected cell, cycle its value
-    if (selectedCell?.row === row && selectedCell?.col === col) {
-      const currentValue = grid[row][col];
-      // Cycle to the next value (null -> 0, 0 -> 1, ..., 8 -> null)
-      const nextValue = currentValue === null ? 0 : currentValue === 8 ? null : currentValue + 1;
-      onCellChange(row, col, nextValue);
-    } else {
-      // Otherwise, just select the cell
-      setSelectedCell({ row, col });
+    // Get the position of the click to position the selector
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    setSelectorPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.bottom
+    });
+    
+    // Select the cell and open the selector
+    setSelectedCell({ row, col });
+    setSelectorOpen(true);
+  }, [lockedCells]);
+
+  // Handle value selection from the album selector
+  const handleAlbumSelect = useCallback((value: number | null) => {
+    if (selectedCell) {
+      onCellChange(selectedCell.row, selectedCell.col, value);
     }
-  }, [selectedCell, grid, onCellChange, lockedCells]);
+  }, [selectedCell, onCellChange]);
+
+  // Close selector
+  const handleCloseSelector = useCallback(() => {
+    setSelectorOpen(false);
+  }, []);
 
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedCell) return;
+      if (!selectedCell || selectorOpen) return;
 
       const { row, col } = selectedCell;
       let newRow = row;
@@ -55,9 +71,16 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, lockedCells
         case "Enter":
         case " ": // Space key
           if (!lockedCells[row][col]) {
-            const currentValue = grid[row][col];
-            const nextValue = currentValue === null ? 0 : currentValue === 8 ? null : currentValue + 1;
-            onCellChange(row, col, nextValue);
+            // Instead of cycling, open the selector
+            const element = document.querySelector(`[data-cell="${row}-${col}"]`) as HTMLElement;
+            if (element) {
+              const rect = element.getBoundingClientRect();
+              setSelectorPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.bottom
+              });
+              setSelectorOpen(true);
+            }
           }
           e.preventDefault(); // Prevent scrolling with space
           return;
@@ -67,6 +90,11 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, lockedCells
           if (!isNaN(num) && num >= 1 && num <= 9 && !lockedCells[row][col]) {
             // Convert to 0-based index (1 -> 0, 2 -> 1, etc.)
             onCellChange(row, col, num - 1);
+            return;
+          }
+          // Check if Backspace or Delete was pressed
+          if ((e.key === 'Backspace' || e.key === 'Delete') && !lockedCells[row][col]) {
+            onCellChange(row, col, null);
             return;
           }
           return;
@@ -82,10 +110,13 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, lockedCells
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedCell, grid, onCellChange, lockedCells]);
+  }, [selectedCell, lockedCells, onCellChange, selectorOpen]);
 
   return (
-    <div className="sudoku-grid grid grid-cols-9 gap-0 border-2 border-primary rounded-md overflow-hidden shadow-md mb-6 max-w-lg w-full">
+    <div 
+      ref={gridRef} 
+      className="sudoku-grid grid grid-cols-9 gap-0 border-2 border-primary rounded-md overflow-hidden shadow-md mb-6 max-w-lg w-full relative"
+    >
       {grid.map((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <SudokuCell
@@ -101,6 +132,13 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, lockedCells
           />
         ))
       )}
+      
+      <AlbumSelector 
+        isOpen={selectorOpen}
+        onClose={handleCloseSelector}
+        onSelect={handleAlbumSelect}
+        position={selectorPosition}
+      />
     </div>
   );
 };

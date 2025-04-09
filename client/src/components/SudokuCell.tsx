@@ -6,7 +6,7 @@ interface SudokuCellProps {
   col: number;
   value: number | null;
   isSelected: boolean;
-  onClick: (row: number, col: number) => void;
+  onClick: (row: number, col: number, event: React.MouseEvent) => void;
   isLocked: boolean;
 }
 
@@ -35,8 +35,9 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
   return (
     <button
       className={`grid-cell w-full aspect-square ${borderRight} ${borderBottom} border-gray-300 flex items-center justify-center ${bgColor} focus:bg-selection/30 transition-colors duration-200 text-lg focus:outline-none`}
-      onClick={() => onClick(row, col)}
+      onClick={(e) => onClick(row, col, e)}
       tabIndex={0}
+      data-cell={`${row}-${col}`}
       aria-label={`Cell at row ${row + 1}, column ${col + 1}${
         albumIcon ? `, contains ${albumIcon.name}` : ", empty"
       }`}

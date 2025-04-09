@@ -66,3 +66,30 @@
 .font-sans {
   font-family: 'Montserrat', sans-serif;
 }
+
+/* Album Selector Styles */
+.album-selector {
+  animation: fadeIn 0.2s ease-in-out;
+  z-index: 50;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.album-selector button {
+  transition: all 0.15s ease-in-out;
+}
+
+.album-selector button:hover {
+  transform: scale(1.05);
+  background-color: rgba(201, 169, 209, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 5px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 10px);
+  }
+}
